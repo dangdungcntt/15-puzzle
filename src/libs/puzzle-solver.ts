@@ -50,7 +50,7 @@ export async function resolve(delay: string | undefined) {
         return;
     }
 
-    let start = Date.now();
+    const start = Date.now();
     console.clear();
     console.log('Resolving...');
 
@@ -70,12 +70,14 @@ export async function resolve(delay: string | undefined) {
         const firstBlock = blocks.find(it => it.correctRow == i && it.correctCol == 0)!;
         const secondBlock = blocks.find(it => it.correctRow == i && it.correctCol == 1)!;
 
-        const isAligned = () => firstBlock.isCorrect && secondBlock.isCorrect;
+        function isAligned() {
+            return firstBlock.isCorrect && secondBlock.isCorrect;
+        }
 
         await moveBlockToPosition(firstBlock, [secondBlock.correctRow, secondBlock.correctCol], isAligned);
         firstBlock.markFreeze();
 
-        let success = await moveBlockToPosition(secondBlock, [secondBlock.correctRow - 1, secondBlock.correctCol], isAligned);
+        const success = await moveBlockToPosition(secondBlock, [secondBlock.correctRow - 1, secondBlock.correctCol], isAligned);
         if (!success) {
             firstBlock.unFreeze();
 
@@ -104,12 +106,14 @@ export async function resolve(delay: string | undefined) {
         const firstBlock = blocks.find(it => it.correctRow == 1 && it.correctCol == j)!;
         const secondBlock = blocks.find(it => it.correctRow == 2 && it.correctCol == j)!;
 
-        const isAligned = () => firstBlock.isCorrect && secondBlock.isCorrect;
+        function isAligned() {
+            return firstBlock.isCorrect && secondBlock.isCorrect;
+        }
 
         await moveBlockToPosition(secondBlock, [firstBlock.correctRow, firstBlock.correctCol], isAligned);
         secondBlock.markFreeze();
 
-        let success = await moveBlockToPosition(firstBlock, [firstBlock.correctRow, firstBlock.correctCol - 1], isAligned);
+        const success = await moveBlockToPosition(firstBlock, [firstBlock.correctRow, firstBlock.correctCol - 1], isAligned);
         if (!success) {
             secondBlock.unFreeze();
             await moveBlockToPosition(firstBlock, [firstBlock.correctRow, firstBlock.correctCol - 2]);
@@ -168,6 +172,11 @@ export async function resolve(delay: string | undefined) {
             throw new Error('puzzle-resolver: Invalid status');
         }
 
+        if (!block.isImage) {
+            clearHighlightEl();
+            block.getEl().classList.add('puzzle-resolver-target');
+        }
+
         const block_target_p = calculateRelativePosition([block.row, block.col], targetPosition);
 
         if (block_target_p == Position.CENTER) {
@@ -187,13 +196,13 @@ export async function resolve(delay: string | undefined) {
                 if (BOTTOM_SIDES.includes(block_target_p)) {
                     await move(Move.DOWN);
                 } else {
-                    let [moveType, fallbacks] = logicalMove(
+                    const [mainMove, fallbacks] = logicalMove(
                         LEFT_SIDES.includes(block_target_p) || block.col == 0,
-                        [Move.RIGTH, [Move.LEFT, Move.UP]],
-                        [Move.LEFT, [Move.RIGTH, Move.UP]]
+                        [[Move.RIGTH, 1], [Move.LEFT, Move.UP]],
+                        [[Move.LEFT, 1], [Move.RIGTH, Move.UP]]
                     );
 
-                    if (!await tryMove(moveType, fallbacks, ignorePosition)) {
+                    if (!await tryMove(mainMove[0], fallbacks, ignorePosition, mainMove[1])) {
                         console.log('Cannot find next step ' + Position.NEXT_TO_TOP);
                         return MoveBlockResult.FAILED;
                     }
@@ -207,13 +216,13 @@ export async function resolve(delay: string | undefined) {
                 if (TOP_SIDES.includes(block_target_p)) {
                     await move(Move.UP);
                 } else {
-                    let [moveType, fallbacks] = logicalMove(
+                    const [mainMove, fallbacks] = logicalMove(
                         LEFT_SIDES.includes(block_target_p) || block.col == 0,
-                        [Move.RIGTH, [Move.LEFT, Move.DOWN]],
-                        [Move.LEFT, [Move.RIGTH, Move.DOWN]]
+                        [[Move.RIGTH, 1], [Move.LEFT, Move.DOWN]],
+                        [[Move.LEFT, 1], [Move.RIGTH, Move.DOWN]]
                     );
 
-                    if (!await tryMove(moveType, fallbacks, ignorePosition)) {
+                    if (!await tryMove(mainMove[0], fallbacks, ignorePosition, mainMove[1])) {
                         console.log('Cannot find next step ' + Position.NEXT_TO_BOTTOM);
                         return MoveBlockResult.FAILED;
                     }
@@ -221,13 +230,13 @@ export async function resolve(delay: string | undefined) {
                 return MoveBlockResult.STEPPED;
             }
 
-            let [moveType, fallbacks] = logicalMove(
+            const [mainMove, fallbacks] = logicalMove(
                 blank_block_p == Position.TOP,
-                [Move.DOWN, [Move.LEFT, Move.RIGTH, Move.UP]],
-                [Move.UP, [Move.LEFT, Move.RIGTH, Move.DOWN]]
+                [[Move.DOWN, block.row - blankBlock.row - (BOTTOM_SIDES.includes(block_target_p) ? 0 : 1)], [Move.LEFT, Move.RIGTH, Move.UP]],
+                [[Move.UP, blankBlock.row - block.row - (TOP_SIDES.includes(block_target_p) ? 0 : 1)], [Move.LEFT, Move.RIGTH, Move.DOWN]]
             );
 
-            if (!await tryMove(moveType, fallbacks, ignorePosition)) {
+            if (!await tryMove(mainMove[0], fallbacks, ignorePosition, mainMove[1])) {
                 console.log('Cannot find next step SAME_COLS');
                 return MoveBlockResult.FAILED;
             }
@@ -241,13 +250,13 @@ export async function resolve(delay: string | undefined) {
                 if (RIGHT_SIDES.includes(block_target_p)) {
                     await move(Move.RIGTH);
                 } else {
-                    let [moveType, fallbacks] = logicalMove(
+                    const [mainMove, fallbacks] = logicalMove(
                         TOP_SIDES.includes(block_target_p) || block.row == 1,
-                        [Move.DOWN, [Move.UP, Move.LEFT]],
-                        [Move.UP, [Move.DOWN, Move.LEFT]]
+                        [[Move.DOWN, 1], [Move.UP, Move.LEFT]],
+                        [[Move.UP, 1], [Move.DOWN, Move.LEFT]]
                     );
 
-                    if (!await tryMove(moveType, fallbacks, ignorePosition)) {
+                    if (!await tryMove(mainMove[0], fallbacks, ignorePosition, mainMove[1])) {
                         console.log('Cannot find next step ' + Position.NEXT_TO_LEFT);
                         return MoveBlockResult.FAILED;
                     }
@@ -260,13 +269,13 @@ export async function resolve(delay: string | undefined) {
                 if (LEFT_SIDES.includes(block_target_p)) {
                     await move(Move.LEFT);
                 } else {
-                    let [moveType, fallbacks] = logicalMove(
+                    const [mainMove, fallbacks] = logicalMove(
                         TOP_SIDES.includes(block_target_p) || block.row == 1,
-                        [Move.DOWN, [Move.UP, Move.RIGTH]],
-                        [Move.UP, [Move.DOWN, Move.RIGTH]]
+                        [[Move.DOWN, 1], [Move.UP, Move.RIGTH]],
+                        [[Move.UP, 1], [Move.DOWN, Move.RIGTH]]
                     );
 
-                    if (!await tryMove(moveType, fallbacks, ignorePosition)) {
+                    if (!await tryMove(mainMove[0], fallbacks, ignorePosition, mainMove[1])) {
                         console.log('Cannot find next step ' + Position.NEXT_TO_RIGHT);
                         return MoveBlockResult.FAILED;
                     }
@@ -274,13 +283,13 @@ export async function resolve(delay: string | undefined) {
                 return MoveBlockResult.STEPPED;
             }
 
-            let [moveType, fallbacks] = logicalMove(
+            const [mainMove, fallbacks] = logicalMove(
                 blank_block_p == Position.LEFT,
-                [Move.RIGTH, [Move.LEFT, Move.DOWN, Move.UP]],
-                [Move.LEFT, [Move.RIGTH, Move.DOWN, Move.UP]]
+                [[Move.RIGTH, block.col - blankBlock.col - (RIGHT_SIDES.includes(block_target_p) ? 0 : 1)], [Move.LEFT, Move.DOWN, Move.UP]],
+                [[Move.LEFT, blankBlock.col - block.col - (LEFT_SIDES.includes(block_target_p) ? 0 : 1)], [Move.RIGTH, Move.DOWN, Move.UP]]
             );
 
-            if (!await tryMove(moveType, fallbacks, ignorePosition)) {
+            if (!await tryMove(mainMove[0], fallbacks, ignorePosition, mainMove[1])) {
                 console.log('Cannot find next step SAME_ROWS');
                 return MoveBlockResult.FAILED;
             }
@@ -293,34 +302,34 @@ export async function resolve(delay: string | undefined) {
             case Position.TOP_LEFT:
                 logicalMoveResult = logicalMove(
                     TOP_SIDES.includes(block_target_p) || RIGHT_SIDES.includes(block_target_p),
-                    [Move.DOWN, [Move.RIGTH, Move.UP, Move.LEFT]],
-                    [Move.RIGTH, [Move.DOWN, Move.UP, Move.LEFT]],
+                    [[Move.DOWN, block.row - blankBlock.row + (TOP_SIDES.includes(block_target_p) ? 1 : 0)], [Move.RIGTH, Move.UP, Move.LEFT]],
+                    [[Move.RIGTH, block.col - blankBlock.col + (LEFT_SIDES.includes(block_target_p) ? 1 : 0)], [Move.DOWN, Move.UP, Move.LEFT]],
                 )
                 break;
             case Position.TOP_RIGHT:
                 logicalMoveResult = logicalMove(
-                    BOTTOM_SIDES.includes(block_target_p) || RIGHT_SIDES.includes(block_target_p),
-                    [Move.LEFT, [Move.DOWN, Move.UP, Move.RIGTH]],
-                    [Move.DOWN, [Move.LEFT, Move.UP, Move.RIGTH]],
+                    TOP_SIDES.includes(block_target_p) || LEFT_SIDES.includes(block_target_p),
+                    [[Move.DOWN, block.row - blankBlock.row + (TOP_SIDES.includes(block_target_p) ? 1 : 0)], [Move.LEFT, Move.UP, Move.RIGTH]],
+                    [[Move.LEFT, blankBlock.col - block.col + (RIGHT_SIDES.includes(block_target_p) ? 1 : 0)], [Move.DOWN, Move.UP, Move.RIGTH]],
                 )
                 break;
             case Position.BOTTOM_LEFT:
                 logicalMoveResult = logicalMove(
                     TOP_SIDES.includes(block_target_p) || LEFT_SIDES.includes(block_target_p),
-                    [Move.RIGTH, [Move.UP, Move.LEFT, Move.DOWN]],
-                    [Move.UP, [Move.RIGTH, Move.LEFT, Move.DOWN]],
+                    [[Move.RIGTH, block.col - blankBlock.col], [Move.UP, Move.LEFT, Move.DOWN]],
+                    [[Move.UP, blankBlock.row - block.row], [Move.RIGTH, Move.LEFT, Move.DOWN]],
                 )
                 break;
             case Position.BOTTOM_RIGHT:
                 logicalMoveResult = logicalMove(
                     TOP_SIDES.includes(block_target_p) || RIGHT_SIDES.includes(block_target_p),
-                    [Move.LEFT, [Move.UP, Move.RIGTH, Move.DOWN]],
-                    [Move.UP, [Move.LEFT, Move.RIGTH, Move.DOWN]],
+                    [[Move.LEFT, blankBlock.col - block.col], [Move.UP, Move.RIGTH, Move.DOWN]],
+                    [[Move.UP, blankBlock.row - block.row], [Move.LEFT, Move.RIGTH, Move.DOWN]],
                 )
                 break;
         }
 
-        if (!logicalMoveResult || !await tryMove(logicalMoveResult[0], logicalMoveResult[1], ignorePosition)) {
+        if (!logicalMoveResult || !await tryMove(logicalMoveResult[0][0], logicalMoveResult[1], ignorePosition, logicalMoveResult[0][1])) {
             console.log(`Cannot find next step where ${blank_block_p}`);
             return MoveBlockResult.FAILED;
         }
@@ -334,8 +343,8 @@ export async function resolve(delay: string | undefined) {
         }
     }
 
-    async function tryMove(moveType: Move, fallbacks: Move[], onFallback: (p: PairNumber) => void): Promise<boolean> {
-        if (await move(moveType)) {
+    async function tryMove(moveType: Move, fallbacks: Move[], onFallback: (p: PairNumber) => void, times: number = 1): Promise<boolean> {
+        if (await move(moveType, times)) {
             return true;
         }
 
@@ -351,32 +360,51 @@ export async function resolve(delay: string | undefined) {
         return false;
     }
 
-    function move(moveType: Move) {
+    function move(moveType: Move, maxTimes: number = 1) {
         return new Promise<boolean>(resolve => {
-            const [rowDelta, colDelta] = transformMove(moveType);
+            const oneTimeDelta = transformMove(moveType, 1);
+            let posibleTimes = 0;
+            const current = [blankBlock.row, blankBlock.col];
+            while (posibleTimes < maxTimes) {
+                current[0] += oneTimeDelta[0];
+                current[1] += oneTimeDelta[1];
+                if (!map[current[0]] || !map[current[0]][current[1]]) {
+                    console.log(`Move: Not exists target ${current}`);
+                    break;
+                }
+
+                if (map[current[0]][current[1]].value == -1 || map[current[0]][current[1]].freeze) {
+                    console.log(`Move: -1 or frezee ${current}`);
+                    break;
+                }
+
+                if (processingBlock && ignoredBlock[`${processingBlock.value} - ${processingBlock.row} - ${processingBlock.col}--${current[0]} - ${current[1]}`]) {
+                    console.log(`Move: -1 or frezee ${current}`);
+                    break;
+                }
+                posibleTimes++;
+            }
+
+            if (posibleTimes == 0) {
+                resolve(false);
+                return;
+            }
+
             const currentBlankPosition: PairNumber = [blankBlock.row, blankBlock.col]
-            const targetBlock: PairNumber = [blankBlock.row + rowDelta, blankBlock.col + colDelta]
-            if (!map[targetBlock[0]] || !map[targetBlock[0]][targetBlock[1]]) {
-                console.log(`Move: Not exists target ${targetBlock}`);
-                resolve(false);
-                return;
-            }
-
-            if (map[targetBlock[0]][targetBlock[1]].value == -1 || map[targetBlock[0]][targetBlock[1]].freeze) {
-                console.log(`Move: -1 or freeze ${targetBlock}`);
-                resolve(false);
-                return;
-            }
-
-            if (processingBlock && ignoredBlock[`${processingBlock.value} - ${processingBlock.row} - ${processingBlock.col}--${targetBlock[0]} - ${targetBlock[1]}`]) {
-                console.log(`Move: -1 or freeze ${targetBlock}`);
-                resolve(false);
-                return;
-            }
-
+            const [rowDelta, colDeta] = transformMove(moveType, posibleTimes);
+            const targetBlock: PairNumber = [blankBlock.row + rowDelta, blankBlock.col + colDeta]
             map[targetBlock[0]][targetBlock[1]].click();
             setTimeout(() => {
-                swap(map, currentBlankPosition, targetBlock);
+                let oneTimeDelta = transformMove(moveType, 1);
+
+                let t = 0;
+                while (t < posibleTimes) {
+                    swap(map, currentBlankPosition, [currentBlankPosition[0] + oneTimeDelta[0], currentBlankPosition[1] + oneTimeDelta[1]]);
+                    currentBlankPosition[0] += oneTimeDelta[0];
+                    currentBlankPosition[1] += oneTimeDelta[1];
+                    t++;
+                }
+
                 resolve(true);
             }, DELAY)
         })
@@ -421,16 +449,16 @@ function logicalMove(condition: boolean, truePhase: LogicalMove, falsePhase: Log
     return condition ? truePhase : falsePhase;
 }
 
-function transformMove(move: Move): PairNumber {
+function transformMove(move: Move, times: number = 1): PairNumber {
     switch (move) {
         case Move.UP:
-            return [-1, 0];
+            return [-1 * times, 0];
         case Move.DOWN:
-            return [1, 0];
+            return [1 * times, 0];
         case Move.LEFT:
-            return [0, -1];
+            return [0, -1 * times];
         case Move.RIGTH:
-            return [0, 1];
+            return [0, 1 * times];
     }
 }
 
@@ -442,9 +470,9 @@ function swap(map: BlockWrapper[][], [row1, col1]: PairNumber, [row2, col2]: Pai
 
 function initBlankMap(gameConfig: GameConfig): BlockWrapper[][] {
     const map = [];
-    let tmpEl = document.createElement('div');
+    const tmpEl = document.createElement('div');
     for (let i = 0; i < gameConfig.rows; i++) {
-        let r = [];
+        const r = [];
         for (let j = 0; j < gameConfig.cols; j++) {
             r.push(BlockWrapper.fromEl(tmpEl));
         }
@@ -457,10 +485,10 @@ type Pair<Type> = Type[];
 
 type PairNumber = Pair<number>;
 
-interface LogicalMove extends Array<Move | Move[]> { 0: Move; 1: Move[] }
+interface LogicalMove extends Array<[Move, number] | Move[]> { 0: [Move, number]; 1: Move[] }
 
 enum Move {
-    UP, DOWN, LEFT, RIGTH
+    UP = 'UP', DOWN = 'DOWN', LEFT = 'LEFT', RIGTH = 'RIGHT'
 }
 
 enum MoveBlockResult {
@@ -507,6 +535,10 @@ class BlockWrapper {
         return new BlockWrapper(el as HTMLDivElement);
     }
 
+    public getEl() {
+        return this.el
+    }
+
     public markFreeze() {
         this.isFreeze = true;
     }
@@ -546,6 +578,10 @@ class BlockWrapper {
 
     public get isCorrect(): boolean {
         return this.row === this.cRow && this.col === this.cCol;
+    }
+
+    public get isImage(): boolean {
+        return this.el.classList.contains('block-mode-image')
     }
 }
 

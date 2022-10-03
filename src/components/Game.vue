@@ -185,7 +185,7 @@ function handleClickBlock(cell: Cell) {
         const targetRow = cell.row;
         while (blankBlock.value.row != targetRow) {
             moveBlankBlock([targetRow > blankBlock.value.row ? 1 : -1, 0], 0);
-            if (config.mode == GameMode.CONTEST) {
+            if (config.mode == GameMode.CONTEST && !route.query.auto_resolve) {
                 break;
             }
         }
@@ -194,7 +194,7 @@ function handleClickBlock(cell: Cell) {
         const targetCol = cell.col;
         while (blankBlock.value.col != targetCol) {
             moveBlankBlock([0, targetCol > blankBlock.value.col ? 1 : -1], 0);
-            if (config.mode == GameMode.CONTEST) {
+            if (config.mode == GameMode.CONTEST && !route.query.auto_resolve) {
                 break;
             }
         }
