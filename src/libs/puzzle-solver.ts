@@ -58,6 +58,20 @@ export async function resolve(delay: string | undefined) {
 
     const blankBlock = blocks.find(el => el.value == 0)!;
 
+    function isBlockedDirection(block: BlockWrapper, move: Move): boolean {
+        const [deltaRow, deltaCol] = transformMove(move, 1)
+        let targetRow = block.row + deltaRow;
+        let targetCol = block.col + deltaCol;
+        if (targetRow < 1 || targetRow > gameConfig.rows) {
+            return true;
+        }
+        if (targetCol < 1 || targetCol > gameConfig.cols - 1) {
+            return true;
+        }
+
+        return map[targetRow][targetCol].freeze
+    }
+
     let processingBlock: BlockWrapper | null = null;
     let ignoredBlock: Record<string, boolean> = {};
 
@@ -300,15 +314,15 @@ export async function resolve(delay: string | undefined) {
             case Position.TOP_LEFT:
                 logicalMoveResult = logicalMove(
                     TOP_SIDES.includes(block_target_p) || RIGHT_SIDES.includes(block_target_p),
-                    [[Move.DOWN, block.row - blankBlock.row + (TOP_SIDES.includes(block_target_p) ? 1 : 0)], [Move.RIGTH, Move.UP, Move.LEFT]],
-                    [[Move.RIGTH, block.col - blankBlock.col + (LEFT_SIDES.includes(block_target_p) ? 1 : 0)], [Move.DOWN, Move.UP, Move.LEFT]],
+                    [[Move.DOWN, block.row - blankBlock.row + (TOP_SIDES.includes(block_target_p) && !isBlockedDirection(block, Move.DOWN) ? 1 : 0)], [Move.RIGTH, Move.UP, Move.LEFT]],
+                    [[Move.RIGTH, block.col - blankBlock.col + (LEFT_SIDES.includes(block_target_p) || block_target_p == Position.TOP ? 1 : 0)], [Move.DOWN, Move.UP, Move.LEFT]],
                 )
                 break;
             case Position.TOP_RIGHT:
                 logicalMoveResult = logicalMove(
                     TOP_SIDES.includes(block_target_p) || LEFT_SIDES.includes(block_target_p),
-                    [[Move.DOWN, block.row - blankBlock.row + (TOP_SIDES.includes(block_target_p) ? 1 : 0)], [Move.LEFT, Move.UP, Move.RIGTH]],
-                    [[Move.LEFT, blankBlock.col - block.col + (RIGHT_SIDES.includes(block_target_p) ? 1 : 0)], [Move.DOWN, Move.UP, Move.RIGTH]],
+                    [[Move.DOWN, block.row - blankBlock.row + (TOP_SIDES.includes(block_target_p) && !isBlockedDirection(block, Move.DOWN) ? 1 : 0)], [Move.LEFT, Move.UP, Move.RIGTH]],
+                    [[Move.LEFT, blankBlock.col - block.col + (RIGHT_SIDES.includes(block_target_p) || block_target_p == Position.TOP ? 1 : 0)], [Move.DOWN, Move.UP, Move.RIGTH]],
                 )
                 break;
             case Position.BOTTOM_LEFT:
@@ -415,6 +429,7 @@ function clearHighlightEl() {
     }
 }
 
+// calculateRelativePosition return relative position when sit at the target position
 function calculateRelativePosition([row, col]: PairNumber, [targetRow, targetCol]: PairNumber): Position {
     if (row == targetRow) {
         if (col == targetCol) {
