@@ -1,4 +1,4 @@
-import { MapSpec } from "../model/GameConfig";
+import { type MapSpec } from "../model/GameConfig";
 
 export const MAP_SIZES: MapSpec[] = [
     { gridCols: 3, gridRows: 3 },

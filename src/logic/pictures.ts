@@ -1,4 +1,4 @@
-import { MapSpec } from "../model/GameConfig";
+import { type MapSpec } from "../model/GameConfig";
 
 export const PICTURES: Record<string, MapSpec & { name: string, url?: string }> = {
     'minion-1': {

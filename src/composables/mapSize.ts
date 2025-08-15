@@ -1,4 +1,4 @@
-import { MapSpec } from "../model/GameConfig";
+import { type MapSpec } from "../model/GameConfig";
 
 export function useMapSize(mapSize: string | undefined, defaultValue: MapSpec, min?: MapSpec, max?: MapSpec): { isValid: boolean, mapSpec: MapSpec } {
     const mapSizeParamsMatches = mapSize?.match(/^(\d{1,2})[x\/](\d{1,2})$/);

@@ -1,7 +1,7 @@
 import {ref}                                                 from 'vue';
 import {shuffle}                                             from '../composables/helpers';
 import Cell                                                  from '../model/Cell';
-import {BlockConfig, BlockSpec, CellType, GameMode, MapSpec} from '../model/GameConfig';
+import {type BlockConfig,type BlockSpec, CellType, GameMode, type MapSpec} from '../model/GameConfig';
 import {GAME_VIEWPORT_PADDING, LIMIT_GENERATE_TIMES}         from './constants';
 
 export function buildInitData({gridCols, gridRows}: MapSpec): { requiredData: number[], shuffleData: number[] } {
@@ -109,10 +109,7 @@ export function generateBlocksState(results: number[][], requiredData: number[],
             let cell = blocks.value[takenBlockIndex++];
             cell.row = i;
             cell.col = j;
-            let [cX, cY] = convertValueToCorrectPosition(cell.value, {
-                gridRows: results.length,
-                gridCols: results[i].length
-            });
+            let [cX, cY] = convertValueToCorrectPosition(cell.value, results[i].length);
             cell.correctRow = cX;
             cell.correctCol = cY;
 
@@ -124,7 +121,7 @@ export function generateBlocksState(results: number[][], requiredData: number[],
     return {blocks, blockMaps};
 }
 
-function convertValueToCorrectPosition(value: number, {gridCols}: MapSpec) {
+export function convertValueToCorrectPosition(value: number, gridCols: number) {
     if (value == 0) {
         return [0, 0];
     }

@@ -1,5 +1,5 @@
 import { nextTick } from 'vue';
-import { createRouter, createWebHistory, RouteLocation } from 'vue-router';
+import { createRouter, createWebHistory, type RouteLocation } from 'vue-router';
 import Home from './pages/Home.vue'
 import ClassicMapSizesPage from './pages/ClassicMapSizesPage.vue'
 import ContestMapSizesPage from './pages/ContestMapSizesPage.vue'

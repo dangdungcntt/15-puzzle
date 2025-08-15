@@ -1,3 +1,5 @@
+import {convertValueToCorrectPosition} from "../logic/game";
+
 enum SolveStatus {
     IDLE = 'IDLE', RUNNING = 'RUNNING'
 }
@@ -70,9 +72,7 @@ export async function resolve(delay: string | undefined) {
         const firstBlock = blocks.find(it => it.correctRow == i && it.correctCol == 0)!;
         const secondBlock = blocks.find(it => it.correctRow == i && it.correctCol == 1)!;
 
-        function isAligned() {
-            return firstBlock.isCorrect && secondBlock.isCorrect;
-        }
+        const isAligned = () => firstBlock.isCorrect && secondBlock.isCorrect;
 
         await moveBlockToPosition(firstBlock, [secondBlock.correctRow, secondBlock.correctCol], isAligned);
         firstBlock.markFreeze();
@@ -106,9 +106,7 @@ export async function resolve(delay: string | undefined) {
         const firstBlock = blocks.find(it => it.correctRow == 1 && it.correctCol == j)!;
         const secondBlock = blocks.find(it => it.correctRow == 2 && it.correctCol == j)!;
 
-        function isAligned() {
-            return firstBlock.isCorrect && secondBlock.isCorrect;
-        }
+        const isAligned = () => firstBlock.isCorrect && secondBlock.isCorrect;
 
         await moveBlockToPosition(secondBlock, [firstBlock.correctRow, firstBlock.correctCol], isAligned);
         secondBlock.markFreeze();
@@ -363,9 +361,9 @@ export async function resolve(delay: string | undefined) {
     function move(moveType: Move, maxTimes: number = 1) {
         return new Promise<boolean>(resolve => {
             const oneTimeDelta = transformMove(moveType, 1);
-            let posibleTimes = 0;
+            let possibleTimes = 0;
             const current = [blankBlock.row, blankBlock.col];
-            while (posibleTimes < maxTimes) {
+            while (possibleTimes < maxTimes) {
                 current[0] += oneTimeDelta[0];
                 current[1] += oneTimeDelta[1];
                 if (!map[current[0]] || !map[current[0]][current[1]]) {
@@ -382,23 +380,23 @@ export async function resolve(delay: string | undefined) {
                     console.log(`Move: -1 or frezee ${current}`);
                     break;
                 }
-                posibleTimes++;
+                possibleTimes++;
             }
 
-            if (posibleTimes == 0) {
+            if (possibleTimes == 0) {
                 resolve(false);
                 return;
             }
 
             const currentBlankPosition: PairNumber = [blankBlock.row, blankBlock.col]
-            const [rowDelta, colDeta] = transformMove(moveType, posibleTimes);
-            const targetBlock: PairNumber = [blankBlock.row + rowDelta, blankBlock.col + colDeta]
+            const [rowDelta, colDelta] = transformMove(moveType, possibleTimes);
+            const targetBlock: PairNumber = [blankBlock.row + rowDelta, blankBlock.col + colDelta]
             map[targetBlock[0]][targetBlock[1]].click();
             setTimeout(() => {
                 let oneTimeDelta = transformMove(moveType, 1);
 
                 let t = 0;
-                while (t < posibleTimes) {
+                while (t < possibleTimes) {
                     swap(map, currentBlankPosition, [currentBlankPosition[0] + oneTimeDelta[0], currentBlankPosition[1] + oneTimeDelta[1]]);
                     currentBlankPosition[0] += oneTimeDelta[0];
                     currentBlankPosition[1] += oneTimeDelta[1];
@@ -452,13 +450,13 @@ function logicalMove(condition: boolean, truePhase: LogicalMove, falsePhase: Log
 function transformMove(move: Move, times: number = 1): PairNumber {
     switch (move) {
         case Move.UP:
-            return [-1 * times, 0];
+            return [-times, 0];
         case Move.DOWN:
-            return [1 * times, 0];
+            return [times, 0];
         case Move.LEFT:
-            return [0, -1 * times];
+            return [0, -times];
         case Move.RIGTH:
-            return [0, 1 * times];
+            return [0, times];
     }
 }
 
@@ -513,7 +511,7 @@ class GameConfig {
 }
 
 class BlockWrapper {
-    private el: HTMLDivElement;
+    private readonly el: HTMLDivElement;
     private readonly val: number;
     private cRow: number;
     private cCol: number;
@@ -583,15 +581,4 @@ class BlockWrapper {
     public get isImage(): boolean {
         return this.el.classList.contains('block-mode-image')
     }
-}
-
-function convertValueToCorrectPosition(value: number, gridCols: number) {
-    if (value == 0) {
-        return [0, 0];
-    }
-
-    return [
-        value % gridCols == 0 ? value / gridCols : (Math.floor(value / gridCols) + 1),
-        value % gridCols == 0 ? gridCols - 1 : (value % gridCols - 1)
-    ];
 }

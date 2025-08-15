@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MapSpec } from '../model/GameConfig';
+import { type MapSpec } from '../model/GameConfig';
 
 defineProps<{ mapSizes: MapSpec[], toRouteName: string }>();
 </script>
